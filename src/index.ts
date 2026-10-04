@@ -53,6 +53,7 @@ import {
   markMovable,
   getAvailableParallelism,
   maybeFileURLToPath,
+  withNullPrototype,
   promiseResolvers
 } from './common';
 const cpuParallelism : number = getAvailableParallelism();
@@ -123,11 +124,17 @@ const kDefaultOptions : FilledOptions = {
   maxQueue: Infinity,
   concurrentTasksPerWorker: 1,
   atomics: 'sync',
+  resourceLimits: undefined,
+  argv: undefined,
+  execArgv: undefined,
+  env: undefined,
+  workerData: undefined,
   taskQueue: new ArrayTaskQueue(),
   niceIncrement: 0,
   trackUnmanagedFds: true,
   closeTimeout: 30000,
   recordTiming: true,
+  loadBalancer: undefined,
   workerHistogram: false
 };
 
@@ -730,8 +737,8 @@ export default class Piscina<T = any, R = any> extends EventEmitterAsyncResource
   #histogram: PiscinaHistogram | null = null;
 
   constructor (options : Options = {}) {
-    const opts = { ...options, '__proto__': null };
-    super({ ...opts, name: 'Piscina' });
+    const opts = withNullPrototype(options);
+    super(withNullPrototype(opts, { name: 'Piscina' }));
 
     if (typeof opts.filename !== 'string' && opts.filename != null) {
       throw new TypeError('options.filename must be a string or null');
@@ -805,12 +812,12 @@ export default class Piscina<T = any, R = any> extends EventEmitterAsyncResource
         new TypeError('options must be an object'));
     }
 
-    const {
-      transferList,
-      signal
-    } = options;
-    const filename = Object.prototype.hasOwnProperty.call(options, 'filename') ? options.filename : null;
-    const name = Object.prototype.hasOwnProperty.call(options, 'name') ? options.name : null;
+    options = withNullPrototype(options);
+
+    const transferList = options.transferList;
+    const signal = options.signal ?? null;
+    const filename = options.filename ?? null;
+    const name = options.name ?? null;
 
     if (transferList !== undefined && !Array.isArray(transferList)) {
       return Promise.reject(
@@ -835,6 +842,8 @@ export default class Piscina<T = any, R = any> extends EventEmitterAsyncResource
     if (options === null || typeof options !== 'object') {
       throw TypeError('options must be an object');
     }
+
+    options = withNullPrototype(options);
 
     let { force } = options;
 
