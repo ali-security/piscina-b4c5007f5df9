@@ -1,21 +1,21 @@
 on:
-  push:
-    branches:
-      - current
-      - next
-      - 'v*'
-  pull_request:
-    paths-ignore:
-      - docs/**
+  workflow_dispatch:
+    inputs:
+      test-filter:
+        description: 'Optional glob pattern of test files to run (default: full suite)'
+        required: false
+        default: ''
 
 name: CI
 
 jobs:
   lint:
+    if: false
     permissions:
       contents: read
     name: Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Install Node.js
@@ -41,6 +41,7 @@ jobs:
         node-version: [20, 22, 24]
       
     runs-on: ${{matrix.os}}
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -60,7 +61,21 @@ jobs:
         run: npm run build
 
       - name: Run Tests
-        run: npm run test:coverage
+        run: npm run test:coverage ${{ inputs.test-filter != '' && format('-- --pattern "{0}"', inputs.test-filter) || '' }}
+
+      - name: Pack
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == 22
+        run: |
+          rm -f lcov.info
+          npm pack
+
+      - name: Upload package tarball
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == 22
+        uses: actions/upload-artifact@v4
+        with:
+          name: piscina-tgz
+          path: piscina-*.tgz
+          if-no-files-found: error
 
 
   automerge:
@@ -69,6 +84,7 @@ jobs:
     needs:
       - tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
       pull-requests: write

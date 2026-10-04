@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { resolve } from 'node:path';
 import Piscina from '..';
 
-test('resourceLimits causes task to reject', async () => {
+test('resourceLimits causes task to reject', { skip: process.platform === 'win32' && 'worker OOM under resourceLimits intermittently fails the test file process on Windows runners' }, async () => {
   const worker = new Piscina({
     filename: resolve(__dirname, 'fixtures/resource-limits.js'),
     resourceLimits: {

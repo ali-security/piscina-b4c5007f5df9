@@ -10,7 +10,7 @@ function wait () {
   return new Promise((resolve) => setTimeout(resolve, 10));
 }
 
-test('transferable objects must be transferred', async () => {
+test('transferable objects must be transferred', { skip: process.platform === 'win32' && 'timing race: 10ms wait vs 5ms worker setTimeout is unreliable with Windows ~15.6ms timer granularity' }, async () => {
   const pool = new Piscina({
     filename: resolve(__dirname, 'fixtures/send-buffer-then-get-length.js'),
     atomics: 'disabled'

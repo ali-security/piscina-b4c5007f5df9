@@ -1,8 +1,6 @@
 name: 'Documentation Build Test'
 on:
-  pull_request:
-    paths:
-      - docs/**
+  workflow_dispatch:
 
 jobs:
   build:
